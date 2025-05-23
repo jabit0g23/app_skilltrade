@@ -1,0 +1,6 @@
+docker run -p 5000:5000 jrgiadach/soabus:v1
+
+- ejecutar los servicios
+
+- ejecutar el cliente
+
