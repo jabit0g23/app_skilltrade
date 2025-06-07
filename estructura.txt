@@ -1,0 +1,42 @@
+Como referencia de la arquitectura.
+
+skilltrade/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── docker-compose.yml
+├── .env.example
+│
+├── backend/                   # API y microservicios Python
+│   ├── Dockerfile            # Para construir la imagen del backend
+│   ├── requirements.txt      # Dependencias de Python
+│   ├── alembic.ini           # Configuración de migraciones (Alembic)
+│   ├── migrations/           # Scripts de migración de BD
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py           # FastAPI entrypoint (incluye WS adapter)
+│   │   ├── config.py         # Carga .env, settings
+│   │   ├── models.py         # SQLAlchemy/Tortoise models
+│   │   ├── db.py             # Inicialización de SQLite + sesión
+│   │   ├── services/         # Lógica de cada microservicio (User, Pub, Chat…)
+│   │   ├── adapters/         # Código de traducción WS ↔ raw-TCP
+│   │   └── tests/            # Tests unitarios / de integración
+│
+├── frontend/                  # App web React
+│   ├── Dockerfile            # Imagen ligera de producción
+│   ├── package.json
+│   ├── vite.config.ts        # (o CRA config)
+│   ├── public/               # index.html, favicon, assets estáticos
+│   ├── src/
+│   │   ├── main.jsx          # Punto de entrada (ReactDOM.render)
+│   │   ├── App.jsx
+│   │   ├── components/       # UI components (cards, modals, etc.)
+│   │   ├── pages/            # Vistas (Home, Perfil, Chat…)
+│   │   ├── hooks/            # e.g. useAuth, useWebSocket
+│   │   ├── services/         # API clients (WebSocket wrapper)
+│   │   ├── store/            # (opcional) Redux / Zustand / Context
+│   │   └── assets/           # Imágenes, estilos globales, fuentes
+│
+└── docs/                      # Diseño, wireframes, especificaciones
+    ├── architecture.md
+    └── api-contract.md
