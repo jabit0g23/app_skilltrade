@@ -1,0 +1,82 @@
+version: "3.8"
+
+services:
+  bus:
+    image: jrgiadach/soabus:v1
+    container_name: skilltrade_bus
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: skilltrade_backend
+    volumes:
+      - ./backend:/app
+    working_dir: /app
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - bus
+    command: uvicorn app.adapters.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  usreg:
+    build:
+      context: ./backend
+    container_name: skilltrade_usreg
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.user.usreg_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  uslog:
+    build:
+      context: ./backend
+    container_name: skilltrade_uslog
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.user.uslog_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  usget:
+    build:
+      context: ./backend
+    container_name: skilltrade_usget
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.user.usget_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  usupd:
+    build:
+      context: ./backend
+    container_name: skilltrade_usupd
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.user.usupd_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+

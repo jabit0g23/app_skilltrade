@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # export_project.py
-# python -X utf8=1 .\export_project.py > proyecto.md
+# python -X utf8=1 ./export_project.py > proyecto.md
 
 import os
 import sys
@@ -13,7 +13,7 @@ def export_project(root_dir):
     lines = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
         # Omitir carpetas .git, node_modules, __pycache__
-        dirnames[:] = [d for d in dirnames if d not in ('.git', 'node_modules', '__pycache__')]
+        dirnames[:] = [d for d in dirnames if d not in ('.git', 'node_modules', '__pycache__', 'venv', '.venv')]
         for fname in filenames:
             filepath = os.path.join(dirpath, fname)
             relpath = os.path.relpath(filepath, root_dir)
