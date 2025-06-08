@@ -3,6 +3,19 @@ import argparse
 import socket
 import sys
 
+
+"""
+python test_cliente.py USREG "alice;alice@ejemplo.com;secret123"
+
+python test_cliente.py USLOG "alice@ejemplo.com;secret123"
+
+python test_cliente.py USGET "2"
+
+python test_cliente.py USUPD "2;AliceWonder;alice.wonder@ejemplo.com;newpass456"
+
+python test_cliente.py USGET "2"
+"""
+
 HOST = "localhost"   # o "bus" si ejecutas dentro de otro contenedor
 PORT = 5000
 PREFIX_LEN = 5

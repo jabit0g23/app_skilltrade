@@ -6,6 +6,19 @@ import argparse
 import socket
 import sys
 
+
+"""
+python test_cliente.py USREG "alice;alice@ejemplo.com;secret123"
+
+python test_cliente.py USLOG "alice@ejemplo.com;secret123"
+
+python test_cliente.py USGET "2"
+
+python test_cliente.py USUPD "2;AliceWonder;alice.wonder@ejemplo.com;newpass456"
+
+python test_cliente.py USGET "2"
+"""
+
 HOST = "localhost"   # o "bus" si ejecutas dentro de otro contenedor
 PORT = 5000
 PREFIX_LEN = 5
@@ -157,6 +170,35 @@ services:
       - PYTHONPATH=/app
     restart: unless-stopped
 
+  usget:
+    build:
+      context: ./backend
+    container_name: skilltrade_usget
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.user.usget_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  usupd:
+    build:
+      context: ./backend
+    container_name: skilltrade_usupd
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.user.usupd_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+
 ```
 
 ### FILE: `.gitignore`
@@ -166,6 +208,12 @@ services:
 *.db
 __pycache__
 *.pyc
+```
+
+### FILE: `skilltrade.db`
+
+```
+
 ```
 
 ### FILE: `README.md`
@@ -452,6 +500,7 @@ Base = declarative_base()
 # backend/app/services/utils.py
 
 import socket
+from typing import Callable
 
 HOST = "bus"      # nombre del contenedor bus en Docker Compose
 PORT = 5000
@@ -469,6 +518,7 @@ def send_prefixed(sock: socket.socket, body: str):
     sock.sendall((prefix + body).encode())
 
 def recv_all(sock: socket.socket, n: int) -> bytes:
+    """Recibe exactamente n bytes del socket."""
     buf = b""
     while len(buf) < n:
         chunk = sock.recv(n - len(buf))
@@ -478,10 +528,30 @@ def recv_all(sock: socket.socket, n: int) -> bytes:
     return buf
 
 def recv_message(sock: socket.socket) -> str:
-    """Recibe un mensaje entero (prefijo + payload) y devuelve el payload."""
+    """Recibe un mensaje entero (prefijo + payload) y devuelve solo el payload."""
     raw_pref = recv_all(sock, PREFIX_LEN).decode()
     length = int(raw_pref)
     return recv_all(sock, length).decode()
+
+def serve(service_id: str, handler: Callable[[str], str]):
+    """
+    Loop genérico de un microservicio:
+    1) Anuncia con sinit<service_id>
+    2) Espera ack
+    3) Repeatedly recibe mensajes, filtra por service_id y delega a handler
+    4) Envía la respuesta que devuelve handler
+    """
+    sock = create_bus_socket()
+    send_prefixed(sock, f"sinit{service_id}")
+    _ = recv_message(sock)  # ack del bus
+
+    while True:
+        msg = recv_message(sock)
+        cmd, payload = msg[:len(service_id)], msg[len(service_id):]
+        if cmd != service_id:
+            continue
+        response = handler(payload)
+        send_prefixed(sock, response)
 
 ```
 
@@ -491,7 +561,7 @@ def recv_message(sock: socket.socket) -> str:
 #!/usr/bin/env python3
 # backend/app/services/user/uslog_service.py
 
-from app.services.utils import create_bus_socket, send_prefixed, recv_message
+from app.services.utils import serve
 from app.adapters.db import SessionLocal
 from app.adapters.models import Usuario
 import hashlib
@@ -507,6 +577,7 @@ def handle_uslog(data: str) -> str:
         email, pwd = data.split(";")
     except ValueError:
         return f"{SERVICE_ID}-ERR:formato inválido"
+
     db = SessionLocal()
     user = db.query(Usuario).filter_by(email=email).first()
     db.close()
@@ -514,21 +585,62 @@ def handle_uslog(data: str) -> str:
         return f"{SERVICE_ID}-ERR:credenciales inválidas"
     return f"{SERVICE_ID}-OK:{user.usuario_id};{user.nombre_usuario}"
 
-def main():
-    sock = create_bus_socket()
-    send_prefixed(sock, f"sinit{SERVICE_ID}")
-    _ = recv_message(sock)
+if __name__ == "__main__":
+    serve(SERVICE_ID, handle_uslog)
 
-    while True:
-        msg = recv_message(sock)
-        cmd, payload = msg[:len(SERVICE_ID)], msg[len(SERVICE_ID):]
-        if cmd != SERVICE_ID:
-            continue
-        response = handle_uslog(payload)
-        send_prefixed(sock, response)
+```
+
+### FILE: `backend/app/services/user/usupd_service.py`
+
+```
+#!/usr/bin/env python3
+# backend/app/services/user/usupd_service.py
+
+from app.services.utils import serve
+from app.adapters.db import SessionLocal
+from app.adapters.models import Usuario
+from sqlalchemy.exc import IntegrityError
+import hashlib
+
+SERVICE_ID = "USUPD"
+
+def hash_pwd(pwd: str) -> str:
+    return hashlib.sha256(pwd.encode()).hexdigest()
+
+def handle_usupd(data: str) -> str:
+    # data esperado: "usuario_id;nombre;email;contrasena"
+    parts = data.split(";")
+    if len(parts) != 4:
+        return f"{SERVICE_ID}-ERR:formato inválido"
+
+    try:
+        user_id = int(parts[0])
+    except ValueError:
+        return f"{SERVICE_ID}-ERR:id inválido"
+
+    nombre, email, pwd = parts[1], parts[2], parts[3]
+
+    db = SessionLocal()
+    user = db.query(Usuario).get(user_id)
+    if not user:
+        db.close()
+        return f"{SERVICE_ID}-ERR:usuario no encontrado"
+
+    user.nombre_usuario = nombre
+    user.email = email
+    user.contrasena = hash_pwd(pwd)
+
+    try:
+        db.commit()
+        return f"{SERVICE_ID}-OK"
+    except IntegrityError:
+        db.rollback()
+        return f"{SERVICE_ID}-ERR:email ya existente"
+    finally:
+        db.close()
 
 if __name__ == "__main__":
-    main()
+    serve(SERVICE_ID, handle_usupd)
 
 ```
 
@@ -538,7 +650,7 @@ if __name__ == "__main__":
 #!/usr/bin/env python3
 # backend/app/services/user/usreg_service.py
 
-from app.services.utils import create_bus_socket, send_prefixed, recv_message
+from app.services.utils import serve
 from app.adapters.db import SessionLocal
 from app.adapters.models import Usuario
 from sqlalchemy.exc import IntegrityError
@@ -554,7 +666,8 @@ def handle_usreg(data: str) -> str:
     try:
         nombre, email, pwd = data.split(";")
     except ValueError:
-        return "Error: formato inválido"
+        return f"{SERVICE_ID}-ERR:formato inválido"
+
     db = SessionLocal()
     user = Usuario(
         nombre_usuario=nombre,
@@ -571,26 +684,47 @@ def handle_usreg(data: str) -> str:
     finally:
         db.close()
 
-def main():
-    sock = create_bus_socket()
+if __name__ == "__main__":
+    serve(SERVICE_ID, handle_usreg)
 
-    # 1) Anunciar al bus
-    send_prefixed(sock, f"sinit{SERVICE_ID}")
+```
 
-    # 2) Esperar ACK de bus (opcional)
-    _ = recv_message(sock)
+### FILE: `backend/app/services/user/usget_service.py`
 
-    # 3) Bucle de peticiones
-    while True:
-        msg = recv_message(sock)       # e.g. "USREGjuan;juan@x.com;1234"
-        cmd, payload = msg[:len(SERVICE_ID)], msg[len(SERVICE_ID):]
-        if cmd != SERVICE_ID:
-            continue
-        result = handle_usreg(payload)  # lógicamente incluye SERVICE_ID-OK o -ERR
-        send_prefixed(sock, result)
+```
+#!/usr/bin/env python3
+# backend/app/services/user/usget_service.py
+
+from app.services.utils import serve
+from app.adapters.db import SessionLocal
+from app.adapters.models import Usuario
+
+SERVICE_ID = "USGET"
+
+def handle_usget(data: str) -> str:
+    # data esperado: "usuario_id"
+    try:
+        user_id = int(data)
+    except ValueError:
+        return f"{SERVICE_ID}-ERR:formato inválido"
+
+    db = SessionLocal()
+    user = db.query(Usuario).get(user_id)
+    db.close()
+    if not user:
+        return f"{SERVICE_ID}-ERR:usuario no encontrado"
+
+    rep = user.reputacion_promedio or 0
+    return (
+        f"{SERVICE_ID}-OK:"
+        f"{user.usuario_id};"
+        f"{user.nombre_usuario};"
+        f"{user.email};"
+        f"{rep}"
+    )
 
 if __name__ == "__main__":
-    main()
+    serve(SERVICE_ID, handle_usget)
 
 ```
 

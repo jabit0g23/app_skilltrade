@@ -1,6 +1,7 @@
 # backend/app/services/utils.py
 
 import socket
+from typing import Callable
 
 HOST = "bus"      # nombre del contenedor bus en Docker Compose
 PORT = 5000
@@ -18,6 +19,7 @@ def send_prefixed(sock: socket.socket, body: str):
     sock.sendall((prefix + body).encode())
 
 def recv_all(sock: socket.socket, n: int) -> bytes:
+    """Recibe exactamente n bytes del socket."""
     buf = b""
     while len(buf) < n:
         chunk = sock.recv(n - len(buf))
@@ -27,7 +29,27 @@ def recv_all(sock: socket.socket, n: int) -> bytes:
     return buf
 
 def recv_message(sock: socket.socket) -> str:
-    """Recibe un mensaje entero (prefijo + payload) y devuelve el payload."""
+    """Recibe un mensaje entero (prefijo + payload) y devuelve solo el payload."""
     raw_pref = recv_all(sock, PREFIX_LEN).decode()
     length = int(raw_pref)
     return recv_all(sock, length).decode()
+
+def serve(service_id: str, handler: Callable[[str], str]):
+    """
+    Loop genérico de un microservicio:
+    1) Anuncia con sinit<service_id>
+    2) Espera ack
+    3) Repeatedly recibe mensajes, filtra por service_id y delega a handler
+    4) Envía la respuesta que devuelve handler
+    """
+    sock = create_bus_socket()
+    send_prefixed(sock, f"sinit{service_id}")
+    _ = recv_message(sock)  # ack del bus
+
+    while True:
+        msg = recv_message(sock)
+        cmd, payload = msg[:len(service_id)], msg[len(service_id):]
+        if cmd != service_id:
+            continue
+        response = handler(payload)
+        send_prefixed(sock, response)
