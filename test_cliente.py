@@ -5,15 +5,23 @@ import sys
 
 
 """
+Testear el servicio de usuario:
+
 python test_cliente.py USREG "alice;alice@ejemplo.com;secret123"
-
 python test_cliente.py USLOG "alice@ejemplo.com;secret123"
-
 python test_cliente.py USGET "2"
-
 python test_cliente.py USUPD "2;AliceWonder;alice.wonder@ejemplo.com;newpass456"
-
 python test_cliente.py USGET "2"
+
+
+Testear el servicio de publicaciones:
+
+python test_cliente.py PBNCR "1;oferta;Desarrollo de API en Python;2;dev,backend"
+python test_cliente.py PBLST "oferta;API"
+python test_cliente.py PBGET "5"
+python test_cliente.py PBDEL "1;5"
+python test_cliente.py PBGET "5"
+
 """
 
 HOST = "localhost"   # o "bus" si ejecutas dentro de otro contenedor

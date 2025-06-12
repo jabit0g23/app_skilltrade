@@ -80,3 +80,59 @@ services:
       - PYTHONPATH=/app
     restart: unless-stopped
 
+  pbncr:
+    build:
+      context: ./backend
+    container_name: skilltrade_pbncr
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.pub.pbncr_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  pblst:
+    build:
+      context: ./backend
+    container_name: skilltrade_pblst
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.pub.pblst_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  pbget:
+    build:
+      context: ./backend
+    container_name: skilltrade_pbget
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.pub.pbget_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  pbdel:
+    build:
+      context: ./backend
+    container_name: skilltrade_pbdel
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.pub.pbdel_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
