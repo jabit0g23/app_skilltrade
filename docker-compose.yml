@@ -89,7 +89,7 @@ services:
       - ./backend:/app
     depends_on:
       - bus
-    command: ["python","-m","app.services.pub.pbncr_service"]
+    command: ["python","-m","app.services.publication.pbncr_service"]
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped
@@ -103,7 +103,7 @@ services:
       - ./backend:/app
     depends_on:
       - bus
-    command: ["python","-m","app.services.pub.pblst_service"]
+    command: ["python","-m","app.services.publication.pblst_service"]
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped
@@ -117,7 +117,7 @@ services:
       - ./backend:/app
     depends_on:
       - bus
-    command: ["python","-m","app.services.pub.pbget_service"]
+    command: ["python","-m","app.services.publication.pbget_service"]
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped
@@ -131,8 +131,190 @@ services:
       - ./backend:/app
     depends_on:
       - bus
-    command: ["python","-m","app.services.pub.pbdel_service"]
+    command: ["python","-m","app.services.publication.pbdel_service"]
     environment:
       - PYTHONPATH=/app
+    restart: unless-stopped
+
+  cvnew:
+    build:
+      context: ./backend
+    container_name: skilltrade_cvnew
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.conversation.cvnew_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  cvlst:
+    build:
+      context: ./backend
+    container_name: skilltrade_cvlst
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.conversation.cvlst_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  msggt:
+    build:
+      context: ./backend
+    container_name: skilltrade_msggt
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.conversation.msggt_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  msgsn:
+    build:
+      context: ./backend
+    container_name: skilltrade_msgsn
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.conversation.msgsn_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  agrcr:
+    build:
+      context: ./backend
+    container_name: skilltrade_agrcr
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.agreement.agrcr_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  agrgt:
+    build:
+      context: ./backend
+    container_name: skilltrade_agrgt
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.agreement.agrgt_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  agrac:
+    build:
+      context: ./backend
+    container_name: skilltrade_agrac
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.agreement.agrac_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  agrrj:
+    build:
+      context: ./backend
+    container_name: skilltrade_agrrj
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.agreement.agrrj_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  agrfn:
+    build:
+      context: ./backend
+    container_name: skilltrade_agrfn
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.agreement.agrfn_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  evlcr:
+    build:
+      context: ./backend
+    container_name: skilltrade_evlcr
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.evaluation.evlcr_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  evlgt:
+    build:
+      context: ./backend
+    container_name: skilltrade_evlgt
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.evaluation.evlgt_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  ntfgt:
+    build:
+      context: ./backend
+    container_name: skilltrade_ntfgt
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.notification.ntfgt_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  ntfrd:
+    build:
+      context: ./backend
+    container_name: skilltrade_ntfrd
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - bus
+    command: ["python","-m","app.services.notification.ntfrd_service"]
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  frontend:
+    image: python:3.10-slim
+    container_name: skilltrade_frontend
+    working_dir: /usr/src/app
+    volumes:
+      - ./frontend:/usr/src/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    command: python -m http.server 3000
     restart: unless-stopped
 

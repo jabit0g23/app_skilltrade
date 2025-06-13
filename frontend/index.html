@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skilltrade App</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Secciones: login/register, perfil, publicaciones, chat, notificaciones -->
+    <section id="auth">
+      <h2>Iniciar Sesión / Registro</h2>
+      <form id="login-form">
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="password" id="login-pass" placeholder="Contraseña" required>
+        <button type="submit">Entrar</button>
+      </form>
+      <form id="register-form">
+        <input type="text" id="reg-name" placeholder="Usuario" required>
+        <input type="email" id="reg-email" placeholder="Email" required>
+        <input type="password" id="reg-pass" placeholder="Contraseña" required>
+        <button type="submit">Registrar</button>
+      </form>
+    </section>
+
+    <section id="profile" class="hidden">
+      <h2>Perfil</h2>
+      <div id="profile-info"></div>
+      <button id="logout-btn">Cerrar Sesión</button>
+    </section>
+
+    <section id="posts" class="hidden">
+      <h2>Publicaciones</h2>
+      <div id="posts-list"></div>
+    </section>
+
+    <section id="chat" class="hidden">
+      <h2>Chat</h2>
+      <div id="conversations"></div>
+      <div id="messages"></div>
+      <form id="message-form">
+        <input type="text" id="message-input" placeholder="Escribe tu mensaje..." required>
+        <button type="submit">Enviar</button>
+      </form>
+    </section>
+
+    <section id="notifications" class="hidden">
+      <h2>Notificaciones</h2>
+      <ul id="notifications-list"></ul>
+    </section>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
