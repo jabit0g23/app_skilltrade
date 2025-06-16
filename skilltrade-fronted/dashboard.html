@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - SkillTrade</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/perfil.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navbar Dinámico (igual que publicaciones) -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- El contenido se generará dinámicamente según el estado de autenticación -->
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <div class="dashboard-container">
+        <!-- Encabezado de la página (igual estilo que publicaciones) -->
+        <div class="page-header">
+            <h1><i class="fas fa-user-circle"></i> Mi Perfil</h1>
+            <p>Administra tu información personal y revisa tus publicaciones</p>
+        </div>
+
+        <!-- Sección de Perfil -->
+        <div class="profile-section">
+            <!-- Tarjeta de Información Personal -->
+            <div class="profile-card">
+                <div class="profile-avatar" id="profileAvatar">
+                    <!-- Se llena dinámicamente con iniciales -->
+                </div>
+                
+                <div class="profile-info">
+                    <h2 id="profileName">Cargando...</h2>
+                    <div class="email" id="profileEmail">email@ejemplo.com</div>
+                    <div class="member-since" id="profileMemberSince">Miembro desde...</div>
+                </div>
+                
+                <div class="profile-bio">
+                    <p id="profileBio">Aún no has agregado una biografía. ¡Cuéntanos sobre ti!</p>
+                </div>
+                
+                <div class="profile-actions">
+                    <button class="btn-profile primary" id="editProfileBtn">
+                        <i class="fas fa-edit"></i>
+                        Editar Perfil
+                    </button>
+                    <button class="btn-profile" id="viewPublicationsBtn">
+                        <i class="fas fa-list"></i>
+                        Ver Mis Publicaciones
+                    </button>
+                    <button class="btn-profile" onclick="window.location.href='publicaciones.html'">
+                        <i class="fas fa-plus"></i>
+                        Nueva Publicación
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estadísticas del Usuario -->
+            <div class="profile-stats">
+                <div class="stats-header">
+                    <h3>Estadísticas</h3>
+                    <p>Tu actividad en SkillTrade</p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalPublications">0</div>
+                        <div class="stat-label">Publicaciones</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalViews">0</div>
+                        <div class="stat-label">Vistas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalInterests">0</div>
+                        <div class="stat-label">Intereses</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avgViews">0</div>
+                        <div class="stat-label">Promedio Vistas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mis Publicaciones -->
+        <div class="user-publications">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-clipboard-list"></i>
+                    Mis Publicaciones
+                </h3>
+                <button class="btn btn-primary" onclick="window.location.href='publicaciones.html'">
+                    <i class="fas fa-plus"></i>
+                    Nueva Publicación
+                </button>
+            </div>
+            
+            <div id="userPublicationsGrid" class="publications-grid">
+                <!-- Se llena dinámicamente -->
+            </div>
+            
+            <!-- Estado vacío -->
+            <div id="emptyPublications" class="empty-publications" style="display: none;">
+                <i class="fas fa-clipboard-list"></i>
+                <h4>No tienes publicaciones aún</h4>
+                <p>Crea tu primera publicación para comenzar a intercambiar habilidades</p>
+                <button class="btn btn-primary" onclick="window.location.href='publicaciones.html'">
+                    <i class="fas fa-plus"></i>
+                    Crear Primera Publicación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Perfil -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Perfil</h3>
+                <button class="modal-close" data-modal="editProfileModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="form-group">
+                        <label for="editName">
+                            <i class="fas fa-user"></i>
+                            Nombre:
+                        </label>
+                        <input type="text" id="editName" required placeholder="Tu nombre completo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editEmail">
+                            <i class="fas fa-envelope"></i>
+                            Email:
+                        </label>
+                        <input type="email" id="editEmail" required placeholder="tu@email.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editBio">
+                            <i class="fas fa-pen"></i>
+                            Biografía:
+                        </label>
+                        <textarea id="editBio" placeholder="Cuéntanos sobre ti, tus habilidades, experiencia..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editLocation">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Ubicación:
+                        </label>
+                        <input type="text" id="editLocation" placeholder="Ciudad, País">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editSkills">
+                            <i class="fas fa-star"></i>
+                            Habilidades principales:
+                        </label>
+                        <input type="text" id="editSkills" placeholder="Programación, Diseño, Música... (separadas por comas)">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="SkillTradeAuth.closeModal('editProfileModal')">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+                <div id="editProfileError" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts en orden correcto -->
+    <script src="js/auth-shared.js"></script>
+    <script src="js/api.js"></script>
+    
+    <!-- Script específico para dashboard -->
+    <script>
+        // ===== VARIABLES GLOBALES =====
+        let currentUser = null;
+        let userPublications = [];
+        let userStats = null;
+
+        // ===== INICIALIZACIÓN =====
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+        });
+
+        async function initializeDashboard() {
+            // Verificar autenticación
+            if (!SkillTradeAuth.requireAuth()) {
+                return;
+            }
+
+            currentUser = SkillTradeAuth.getCurrentUser();
+            if (!currentUser) {
+                SkillTradeAuth.logout();
+                return;
+            }
+
+            // Cargar datos del usuario
+            await loadUserData();
+            setupEventListeners();
+        }
+
+        async function loadUserData() {
+            try {
+                SkillTradeAuth.showLoading('Cargando perfil...');
+
+                // Cargar información actualizada del usuario desde el backend
+                const updatedUser = await SkillTradeAPI.getUserById(currentUser.id);
+                if (updatedUser) {
+                    currentUser = updatedUser;
+                    // Actualizar en localStorage
+                    localStorage.setItem('skilltrade_user', JSON.stringify(currentUser));
+                }
+
+                // Cargar publicaciones del usuario
+                userPublications = await SkillTradeAPI.getUserPublications(currentUser.id);
+                
+                // Cargar estadísticas
+                userStats = await SkillTradeAPI.getPublicationStats();
+
+                SkillTradeAuth.hideLoading();
+
+                // Actualizar UI
+                updateProfileInfo();
+                updateStats();
+                updatePublications();
+
+            } catch (error) {
+                console.error('Error al cargar datos del usuario:', error);
+                SkillTradeAuth.hideLoading();
+                SkillTradeAuth.showError(null, 'Error al cargar los datos del perfil');
+            }
+        }
+
+        function updateProfileInfo() {
+            const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileName').textContent = currentUser.name;
+            document.getElementById('profileEmail').textContent = currentUser.email;
+            
+            // Formatear fecha de registro
+            const joinDate = new Date(currentUser.joinDate);
+            document.getElementById('profileMemberSince').textContent = 
+                `Miembro desde ${joinDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+            
+            // Biografía
+            const bioElement = document.getElementById('profileBio');
+            if (currentUser.bio && currentUser.bio.trim()) {
+                bioElement.textContent = currentUser.bio;
+            } else {
+                bioElement.textContent = 'Aún no has agregado una biografía. ¡Cuéntanos sobre ti!';
+            }
+        }
+
+        function updateStats() {
+            if (userStats) {
+                document.getElementById('totalPublications').textContent = userStats.totalPublications;
+                document.getElementById('totalViews').textContent = userStats.totalViews;
+                document.getElementById('totalInterests').textContent = userStats.totalInterests;
+                document.getElementById('avgViews').textContent = userStats.averageViews;
+            }
+        }
+
+        function updatePublications() {
+            const grid = document.getElementById('userPublicationsGrid');
+            const emptyState = document.getElementById('emptyPublications');
+
+            if (userPublications.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            emptyState.style.display = 'none';
+
+            grid.innerHTML = userPublications.map(pub => createUserPublicationCard(pub)).join('');
+            setupPublicationEvents();
+        }
+
+        function createUserPublicationCard(publication) {
+            return `
+                <div class="user-publication-card" data-id="${publication.id}">
+                    <div class="publication-title">${publication.title}</div>
+                    <div class="publication-description">
+                        ${publication.description.length > 100 ? 
+                            publication.description.substring(0, 100) + '...' : 
+                            publication.description}
+                    </div>
+                    
+                    <div class="publication-meta">
+                        <div class="publication-date">
+                            ${SkillTradeAPI.formatRelativeTime(publication.createdAt)}
+                        </div>
+                        <div class="publication-stats">
+                            <span><i class="fas fa-eye"></i> ${publication.views}</span>
+                            <span><i class="fas fa-heart"></i> ${publication.interests}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="publication-actions">
+                        <button class="btn-publication edit" onclick="editPublication(${publication.id})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn-publication delete" onclick="deletePublication(${publication.id})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                        <button class="btn-publication" onclick="viewPublication(${publication.id})">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setupEventListeners() {
+            // Botón editar perfil
+            document.getElementById('editProfileBtn').addEventListener('click', openEditProfileModal);
+            
+            // Botón ver publicaciones (scroll a la sección)
+            document.getElementById('viewPublicationsBtn').addEventListener('click', () => {
+                document.querySelector('.user-publications').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // Formulario de editar perfil
+            document.getElementById('editProfileForm').addEventListener('submit', handleEditProfile);
+
+            // Eventos de modales
+            setupModalEvents();
+        }
+
+        function setupModalEvents() {
+            const closeButtons = document.querySelectorAll('.modal-close');
+            closeButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modalId = btn.getAttribute('data-modal');
+                    SkillTradeAuth.closeModal(modalId);
+                });
+            });
+        }
+
+        function setupPublicationEvents() {
+            // Los eventos ya están configurados con onclick en el HTML generado
+        }
+
+        // ===== FUNCIONES DE PERFIL =====
+        function openEditProfileModal() {
+            // Llenar formulario con datos actuales
+            document.getElementById('editName').value = currentUser.name || '';
+            document.getElementById('editEmail').value = currentUser.email || '';
+            document.getElementById('editBio').value = currentUser.bio || '';
+            document.getElementById('editLocation').value = currentUser.location || '';
+            document.getElementById('editSkills').value = currentUser.skills || '';
+            
+            SkillTradeAuth.openModal('editProfileModal');
+        }
+
+        async function handleEditProfile(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('editName').value.trim(),
+                email: document.getElementById('editEmail').value.trim(),
+                bio: document.getElementById('editBio').value.trim(),
+                location: document.getElementById('editLocation').value.trim(),
+                skills: document.getElementById('editSkills').value.trim()
+            };
+
+            const errorDiv = document.getElementById('editProfileError');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            // Validaciones básicas
+            if (!formData.name || !formData.email) {
+                SkillTradeAuth.showError(errorDiv, 'El nombre y email son obligatorios');
+                return;
+            }
+
+            if (!SkillTradeAuth.isValidEmail(formData.email)) {
+                SkillTradeAuth.showError(errorDiv, 'Por favor ingresa un email válido');
+                return;
+            }
+
+            try {
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                submitBtn.disabled = true;
+
+                const result = await SkillTradeAPI.updateUser(currentUser.id, formData);
+
+                if (result.success) {
+                    // Actualizar usuario actual
+                    currentUser = result.user;
+                    localStorage.setItem('skilltrade_user', JSON.stringify(currentUser));
+                    
+                    // Actualizar UI
+                    updateProfileInfo();
+                    SkillTradeAuth.setupNavbar(); // Actualizar navbar si cambió el nombre
+                    
+                    SkillTradeAuth.closeModal('editProfileModal');
+                    SkillTradeAuth.showSuccessMessage('Perfil actualizado correctamente');
+                } else {
+                    SkillTradeAuth.showError(errorDiv, result.message);
+                }
+
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+
+            } catch (error) {
+                console.error('Error al actualizar perfil:', error);
+                SkillTradeAuth.showError(errorDiv, 'Error al actualizar el perfil');
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                submitBtn.disabled = false;
+            }
+        }
+
+        // ===== FUNCIONES DE PUBLICACIONES =====
+        async function editPublication(id) {
+            // Redirigir a publicaciones con el ID para editar
+            window.location.href = `publicaciones.html?edit=${id}`;
+        }
+
+        async function deletePublication(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta publicación?')) {
+                try {
+                    SkillTradeAuth.showLoading('Eliminando publicación...');
+                    
+                    const result = await SkillTradeAPI.deletePublication(id);
+                    
+                    SkillTradeAuth.hideLoading();
+                    
+                    if (result.success) {
+                        SkillTradeAuth.showSuccessMessage('Publicación eliminada correctamente');
+                        // Recargar datos
+                        await loadUserData();
+                    } else {
+                        SkillTradeAuth.showError(null, result.message);
+                    }
+                } catch (error) {
+                    SkillTradeAuth.hideLoading();
+                    console.error('Error al eliminar publicación:', error);
+                    SkillTradeAuth.showError(null, 'Error al eliminar la publicación');
+                }
+            }
+        }
+
+        function viewPublication(id) {
+            // Redirigir a publicaciones con el ID para ver detalles
+            window.location.href = `publicaciones.html?view=${id}`;
+        }
+
+        // ===== FUNCIONES GLOBALES =====
+        window.editPublication = editPublication;
+        window.deletePublication = deletePublication;
+        window.viewPublication = viewPublication;
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+conectarse a la bbdd:
+
+cd backend
+sqlite3 skilltrade.db
+sqlite> .tables
+SELECT count(*) FROM st_usuarios;

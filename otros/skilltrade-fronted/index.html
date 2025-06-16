@@ -127,35 +127,34 @@
     <!-- Información de Backend -->
     <div id="backendInfo" style="position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 10px; font-size: 12px; max-width: 300px; z-index: 1000;">
         <strong>Estado del Backend:</strong><br>
-        <span id="backendStatus">Conectando...</span><br><br>
+        <span id="backendStatus">Verificando conexión...</span><br><br>
         <strong>Cuentas de prueba:</strong><br>
-        <small>Usa las cuentas de tu seed_db.py:</small><br>
         alice@example.com / alice123<br>
         bob@example.com / bob123<br><br>
-        <button onclick="testBackendConnection()" style="background: #4a90e2; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 11px;">
-            🔄 Probar Conexión
-        </button>
+        <small>Úsalas para probar el login</small>
     </div>
 
     <!-- Scripts en orden correcto -->
-    <script src="js/auth-shared.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/auth-shared.js"></script>
     
     <!-- Script específico para la página index -->
     <script>
         // ===== FUNCIONES ESPECÍFICAS DE INDEX =====
         
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Index page iniciando...');
             initializeIndexPage();
             checkAndDisplayBackendStatus();
         });
 
         function initializeIndexPage() {
-            // Verificar si ya está autenticado
+            // Verificar si ya está autenticado y redirigir
             if (SkillTradeAuth.redirectIfAuthenticated()) {
                 return;
             }
             
+            console.log('Usuario no autenticado, mostrando página de login/registro');
             setupModalEvents();
             setupFormEvents();
             setupVisualEffects();
@@ -167,18 +166,40 @@
             try {
                 statusElement.textContent = 'Verificando...';
                 
-                // Intentar conectar al WebSocket
-                await SkillTradeAPI.wsManager.connect();
+                // Esperar a que las APIs estén disponibles
+                let attempts = 0;
+                while (typeof SkillTradeAPI === 'undefined' && attempts < 10) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    attempts++;
+                }
                 
-                statusElement.innerHTML = `
-                    <span style="color: #28a745;">✅ Backend conectado</span><br>
-                    <small>WebSocket: ${SkillTradeAPI.WS_URL}</small>
-                `;
+                if (typeof SkillTradeAPI === 'undefined') {
+                    statusElement.innerHTML = `
+                        <span style="color: #dc3545;">APIs no cargadas</span><br>
+                        <small>Revisar archivos JS</small>
+                    `;
+                    return;
+                }
                 
+                // Verificar conexión del backend
+                const isConnected = await SkillTradeAuth.checkBackendConnection();
+                
+                if (isConnected) {
+                    statusElement.innerHTML = `
+                        <span style="color: #28a745;"> Backend conectado</span><br>
+                        <small>Listo para usar</small>
+                    `;
+                } else {
+                    statusElement.innerHTML = `
+                        <span style="color: #ffc107;"> Backend no disponible</span><br>
+                        <small>Verifica docker-compose</small>
+                    `;
+                }
             } catch (error) {
+                console.error('Error al verificar backend:', error);
                 statusElement.innerHTML = `
-                    <span style="color: #dc3545;">❌ Sin conexión</span><br>
-                    <small>Verificar docker-compose up</small>
+                    <span style="color: #dc3545;"> Error de conexión</span><br>
+                    <small>Ver consola para detalles</small>
                 `;
             }
         }
@@ -191,16 +212,23 @@
             const closeButtons = document.querySelectorAll('.modal-close');
             
             if (loginBtn) {
-                loginBtn.addEventListener('click', () => SkillTradeAuth.openModal('loginModal'));
+                loginBtn.addEventListener('click', () => {
+                    console.log(' Abriendo modal de login');
+                    SkillTradeAuth.openModal('loginModal');
+                });
             }
             
             if (registerBtn) {
-                registerBtn.addEventListener('click', () => SkillTradeAuth.openModal('registerModal'));
+                registerBtn.addEventListener('click', () => {
+                    console.log(' Abriendo modal de registro');
+                    SkillTradeAuth.openModal('registerModal');
+                });
             }
             
             if (switchToRegister) {
                 switchToRegister.addEventListener('click', (e) => {
                     e.preventDefault();
+                    console.log(' Cambiando a registro');
                     SkillTradeAuth.closeModal('loginModal');
                     setTimeout(() => SkillTradeAuth.openModal('registerModal'), 200);
                 });
@@ -209,6 +237,7 @@
             if (switchToLogin) {
                 switchToLogin.addEventListener('click', (e) => {
                     e.preventDefault();
+                    console.log(' Cambiando a login');
                     SkillTradeAuth.closeModal('registerModal');
                     setTimeout(() => SkillTradeAuth.openModal('loginModal'), 200);
                 });
@@ -217,8 +246,29 @@
             closeButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const modalId = btn.getAttribute('data-modal');
+                    console.log(` Cerrando modal: ${modalId}`);
                     SkillTradeAuth.closeModal(modalId);
                 });
+            });
+
+            // Cerrar modal al hacer clic fuera
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    const modalId = e.target.id;
+                    console.log(` Cerrando modal por clic fuera: ${modalId}`);
+                    SkillTradeAuth.closeModal(modalId);
+                }
+            });
+
+            // Cerrar modal con tecla Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const openModal = document.querySelector('.modal[style*="block"]');
+                    if (openModal) {
+                        console.log(' Cerrando modal con Escape');
+                        SkillTradeAuth.closeModal(openModal.id);
+                    }
+                }
             });
         }
 
@@ -237,34 +287,42 @@
 
         async function handleLoginSubmit(e) {
             e.preventDefault();
+            console.log('🔑 Intentando login...');
             
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginError');
             const submitBtn = e.target.querySelector('button[type="submit"]');
             
+            // Limpiar errores previos
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            
             try {
                 const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
                 submitBtn.disabled = true;
                 
+                console.log(`🔍 Intentando login con: ${email}`);
                 const result = await SkillTradeAuth.handleLoginForm(email, password);
                 
                 if (result.success) {
+                    console.log(` Login exitoso para: ${result.user.name}`);
                     SkillTradeAuth.closeModal('loginModal');
-                    SkillTradeAuth.showLoading('¡Bienvenido! Redirigiendo...');
+                    SkillTradeAuth.showLoading('¡Bienvenido! Redirigiendo al dashboard...');
                     
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
                     }, 2000);
                 } else {
+                    console.error(` Login falló: ${result.message}`);
                     SkillTradeAuth.showError(errorDiv, result.message);
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
                 }
                 
             } catch (error) {
-                console.error('Error en login:', error);
+                console.error(' Error inesperado en login:', error);
                 SkillTradeAuth.showError(errorDiv, 'Error inesperado. Inténtalo nuevamente.');
                 submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
                 submitBtn.disabled = false;
@@ -273,6 +331,7 @@
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
+            console.log(' Intentando registro...');
             
             const name = document.getElementById('registerName').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
@@ -281,28 +340,35 @@
             const errorDiv = document.getElementById('registerError');
             const submitBtn = e.target.querySelector('button[type="submit"]');
             
+            // Limpiar errores previos
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            
             try {
                 const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando cuenta...';
                 submitBtn.disabled = true;
                 
+                console.log(` Intentando registro para: ${name} (${email})`);
                 const result = await SkillTradeAuth.handleRegisterForm(name, email, password, confirmPassword);
                 
                 if (result.success) {
+                    console.log(` Registro exitoso para: ${result.user.name}`);
                     SkillTradeAuth.closeModal('registerModal');
-                    SkillTradeAuth.showLoading('¡Cuenta creada! Redirigiendo...');
+                    SkillTradeAuth.showLoading('¡Cuenta creada! Redirigiendo al dashboard...');
                     
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
                     }, 2000);
                 } else {
+                    console.error(` Registro falló: ${result.message}`);
                     SkillTradeAuth.showError(errorDiv, result.message);
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
                 }
                 
             } catch (error) {
-                console.error('Error en registro:', error);
+                console.error(' Error inesperado en registro:', error);
                 SkillTradeAuth.showError(errorDiv, 'Error al crear la cuenta. Inténtalo nuevamente.');
                 submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Crear Cuenta';
                 submitBtn.disabled = false;
@@ -379,39 +445,23 @@
             }, 600);
         }
 
-        // ===== FUNCIÓN PARA PROBAR CONEXIÓN =====
-        async function testBackendConnection() {
-            const statusElement = document.getElementById('backendStatus');
-            statusElement.innerHTML = '<span style="color: yellow;">🔄 Probando conexión...</span>';
-            
-            try {
-                // Intentar conectar al WebSocket
-                await SkillTradeAPI.wsManager.connect();
-                
-                // Probar con un servicio real (obtener usuario que no existe)
-                const result = await SkillTradeAPI.getUserById(999999);
-                
-                statusElement.innerHTML = `
-                    <span style="color: #28a745;">✅ Backend conectado</span><br>
-                    <small>WebSocket: ${SkillTradeAPI.WS_URL}</small><br>
-                    <small>Servicios: Funcionando</small>
-                `;
-                
-                console.log('✅ Prueba de conexión exitosa');
-                
-            } catch (error) {
-                statusElement.innerHTML = `
-                    <span style="color: #dc3545;">❌ Error de conexión</span><br>
-                    <small>${error.message}</small><br>
-                    <small>Verificar docker-compose up</small>
-                `;
-                
-                console.error('❌ Prueba de conexión falló:', error);
-            }
-        }
+        // ===== FUNCIÓN GLOBAL PARA DEBUG =====
+        window.testLogin = function() {
+            console.log(' Test de login rápido...');
+            document.getElementById('loginEmail').value = 'alice@example.com';
+            document.getElementById('loginPassword').value = 'alice123';
+            console.log(' Campos llenados con credenciales de prueba');
+        };
 
-        // Hacer función global
-        window.testBackendConnection = testBackendConnection;
+        window.testRegister = function() {
+            console.log(' Test de registro rápido...');
+            const timestamp = Date.now();
+            document.getElementById('registerName').value = 'Usuario Test';
+            document.getElementById('registerEmail').value = `test${timestamp}@example.com`;
+            document.getElementById('registerPassword').value = 'test123';
+            document.getElementById('registerConfirmPassword').value = 'test123';
+            console.log(' Campos llenados con datos de prueba');
+        };
     </script>
 </body>
 </html>
